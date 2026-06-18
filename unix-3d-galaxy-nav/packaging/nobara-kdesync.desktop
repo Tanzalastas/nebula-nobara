@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=NOBARA KDESYNC
+Comment=3D Filesystem Navigator — your filesystem as a spiral galaxy
+Exec=__INSTALL_DIR__/run.sh
+Path=__INSTALL_DIR__
+Icon=drive-harddisk
+Terminal=false
+Categories=System;FileTools;
+Keywords=KDESYNC;filesystem;galaxy;nobara;

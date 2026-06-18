@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>NOBARA KDESYNC · 3D Filesystem Navigator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Orbitron:wght@500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css" />
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+</head>
+<body>
+
+<div id="loading-screen">
+  <div class="loading-text">INITIALIZING KDESYNC</div>
+  <div class="loading-bar"><div class="loading-bar-fill"></div></div>
+  <div class="loading-status" id="loading-status">contacting backend…</div>
+</div>
+
+<div id="app" class="hidden">
+
+  <canvas id="galaxy-canvas"></canvas>
+  <div id="arm-labels"></div>
+
+  <aside id="left-col">
+    <div class="brand-block">
+      <div class="brand">NOBARA <span class="brand-accent">KDESYNC</span></div>
+      <div class="brand-sub">3D FILESYSTEM NAVIGATOR</div>
+      <div class="brand-view" id="view-subtitle">GALACTIC ORBIT VIEW</div>
+    </div>
+
+    <div class="panel hud-overview">
+      <div class="panel-title">SYSTEM OVERVIEW</div>
+      <div class="overview-grid" id="overview-grid"></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">LEGEND</div>
+      <div class="legend-list">
+        <div class="legend-item"><span class="legend-dot" style="color:#ff3b3b; text-shadow: 0 0 8px #ff3b3b;">★</span>Star = Top Level Directory</div>
+        <div class="legend-item"><span class="legend-dot" style="color:#3bd6ff; text-shadow: 0 0 8px #3bd6ff;">●</span>Planet = Subdirectory</div>
+        <div class="legend-item"><span class="legend-dot" style="color:#9bd6ff; text-shadow: 0 0 8px #9bd6ff;">●</span>Moon = Sub-Subdirectory</div>
+        <div class="legend-item"><span class="legend-dot" style="color:#b0b8d0">●</span>Asteroid = File</div>
+        <div class="legend-item"><span class="legend-dot" style="color:#3bd6ff; opacity:0.5;">○</span>Ring = Symlink</div>
+        <div class="legend-item"><span class="legend-dot" style="color:#7dff8a; text-shadow: 0 0 8px #7dff8a;">◉</span>Wormhole = Mount Point</div>
+        <div class="legend-item"><span class="legend-dot" style="color:#b66bff; text-shadow: 0 0 8px #b66bff;">☁</span>Nebula = Virtual Filesystem</div>
+        <div class="legend-item"><span class="legend-dot" style="color:#ff3b3b; text-shadow: 0 0 8px #ff3b3b;">⯎</span>Beacon = Critical (Boot/System)</div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">CRITICALITY</div>
+      <div class="legend-list" id="criticality-legend"></div>
+    </div>
+
+    <div class="panel" id="processes-panel">
+      <div class="panel-title">ACTIVE PROCESSES</div>
+      <div class="process-list" id="process-list"></div>
+    </div>
+  </aside>
+
+  <header id="top-center">
+    <div class="control-group">
+      <div class="control-label">VIEW MODE</div>
+      <div class="button-row" id="view-mode-buttons">
+        <button data-mode="galactic" class="active">GALACTIC</button>
+        <button data-mode="systemmap">SYSTEM MAP</button>
+        <button data-mode="orbit">ORBIT</button>
+        <button data-mode="list">LIST</button>
+      </div>
+    </div>
+    <div class="control-group">
+      <div class="control-label">OVERLAY</div>
+      <div class="button-row" id="overlay-buttons">
+        <button data-overlay="none" class="active">NONE</button>
+        <button data-overlay="dependencies">DEPENDENCIES</button>
+        <button data-overlay="ownership">OWNERSHIP</button>
+        <button data-overlay="size">SIZE</button>
+        <button data-overlay="activity">ACTIVITY</button>
+      </div>
+    </div>
+    <div class="control-group">
+      <div class="control-label">GALACTIC COORDINATES</div>
+      <div class="coord-readout">
+        X: <span id="coord-x">0.0</span>&nbsp;&nbsp;
+        Y: <span id="coord-y">0.0</span>&nbsp;&nbsp;
+        Z: <span id="coord-z">0.0</span>
+      </div>
+    </div>
+  </header>
+
+  <aside id="right-col">
+    <div class="top-right-tools">
+      <div class="search-wrapper">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        <input type="text" id="search-input" placeholder="Search filesystem..." />
+        <div id="search-results" class="search-results"></div>
+      </div>
+      <div class="floating-health">
+        <div class="clock-block">
+          <div class="clock" id="clock">10:42:17 PM</div>
+          <div class="clock-date" id="clock-date">May 15, 2025</div>
+        </div>
+        <div class="health-block">
+          <div class="health-line">
+            <svg class="health-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+            SYSTEM HEALTH
+          </div>
+          <strong id="health-status" class="health-status excellent">Excellent</strong>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" id="object-info-panel">
+      <div class="panel-title">OBJECT INFORMATION</div>
+      <div id="object-info-empty" class="muted">Click a star, planet, or asteroid to inspect it.</div>
+      <div id="object-info-content" class="hidden">
+        <div class="oi-header">
+          <div class="oi-icon" id="oi-badge-icon"></div>
+          <div>
+            <div class="object-path" id="oi-path">/boot</div>
+            <div class="object-badge" id="oi-criticality">Top Level Directory (Star)</div>
+          </div>
+        </div>
+        <div class="oi-details">
+          <div class="oi-label">Purpose:</div>
+          <p class="object-purpose" id="oi-purpose"></p>
+          <div id="oi-crit-row" class="oi-row"></div>
+          <div class="oi-row">Size: <span class="oi-val" id="oi-size"></span></div>
+          <div class="oi-row">Files: <span class="oi-val" id="oi-files"></span></div>
+          <div class="oi-row" style="margin-top:8px;">Owned by: <span class="oi-val" id="oi-owner"></span></div>
+          <div class="oi-label" style="margin-top:8px;">Depends on:</div>
+          <ul class="oi-list" id="oi-deps"></ul>
+          <div class="oi-label" style="margin-top:8px;">Required by:</div>
+          <ul class="oi-list" id="oi-reqs"></ul>
+          <div class="oi-row" style="margin-top:8px;">Mount Point: <span class="oi-val" id="oi-mount"></span></div>
+          <div class="oi-row">Device: <span class="oi-val" id="oi-device"></span></div>
+          <div class="oi-row">Filesystem: <span class="oi-val" id="oi-fstype"></span></div>
+          <div class="oi-row" style="margin-top:8px;" id="oi-safe-row">Safe to delete: <span class="oi-val" id="oi-safe"></span></div>
+        </div>
+        <div class="oi-label" style="margin-top:12px;">Inspect:</div>
+        <div id="oi-commands" class="command-list"></div>
+      </div>
+    </div>
+
+    <div class="panel hud-actions">
+      <div class="panel-title">ACTIONS</div>
+      <div class="actions-list" id="actions-list">
+        <button data-act="open-fm"><svg viewBox="0 0 24 24" stroke="currentColor" fill="none"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg> Open in File Manager</button>
+        <button data-act="open-term"><svg viewBox="0 0 24 24" stroke="currentColor" fill="none"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect><polyline points="4 10 20 10"></polyline><line x1="8" y1="14" x2="12" y2="14"></line></svg> Open in Terminal</button>
+        <button data-act="analyze-deps"><svg viewBox="0 0 24 24" stroke="currentColor" fill="none"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg> Analyze Dependencies</button>
+        <button data-act="show-owner"><svg viewBox="0 0 24 24" stroke="currentColor" fill="none"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg> Show Ownership (rpm -qf)</button>
+        <button data-act="show-size"><svg viewBox="0 0 24 24" stroke="currentColor" fill="none"><line x1="12" y1="20" x2="12" y2="10"></line><line x1="18" y1="20" x2="18" y2="4"></line><line x1="6" y1="20" x2="6" y2="16"></line></svg> Show Size (du)</button>
+        <button data-act="bookmark"><svg viewBox="0 0 24 24" stroke="currentColor" fill="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg> Add to Bookmarks</button>
+        <button data-act="unmount" class="danger"><svg viewBox="0 0 24 24" stroke="currentColor" fill="none"><path d="M5 20h14"></path><path d="M12 16v-9"></path><polyline points="9 10 12 7 15 10"></polyline></svg> Unmount (if mount point)</button>
+      </div>
+    </div>
+
+    <div class="panel" id="system-log-panel">
+      <div class="panel-title">SYSTEM LOG</div>
+      <div class="system-log" id="system-log"></div>
+    </div>
+  </aside>
+
+  <footer id="bottom-row">
+    <div class="panel" style="flex: 1.1;">
+      <div class="panel-title">DEPENDENCY GRAPH <span class="panel-subtitle-inline">(Selected: <span id="dg-selected">/boot</span>)</span></div>
+      <svg id="dependency-graph" viewBox="-215 -118 430 236"></svg>
+    </div>
+
+    <div class="panel" style="flex: 1.5;">
+      <div class="panel-title">BOOT SEQUENCE CHAIN</div>
+      <div class="boot-chain" id="boot-chain"></div>
+      <div class="critical-path">Critical Path: <span>UEFI → EFI → GRUB2 → Kernel → Initramfs → systemd → KDE</span></div>
+    </div>
+
+    <div class="panel" style="flex: 1;">
+      <div class="panel-title">STORAGE MAP</div>
+      <div class="storage-map" id="storage-map"></div>
+    </div>
+  </footer>
+
+  <div id="status-bar">
+    <div class="status-left">
+      <span class="status-label">GALACTIC STATUS</span>
+      <span class="status-item"><strong id="stat-stars">16</strong> STARS</span>
+      <span class="status-item"><strong id="stat-planets">142</strong> PLANETS</span>
+      <span class="status-item"><strong id="stat-moons">1,248</strong> MOONS</span>
+      <span class="status-item"><strong id="stat-asteroids">94,532</strong> ASTEROIDS</span>
+      <span class="status-item"><strong id="stat-wormholes">36</strong> WORMHOLES</span>
+    </div>
+    <div class="status-center">
+      <span class="status-item">DEPENDENCY LINES: <strong id="stat-deps">1,287</strong></span>
+    </div>
+    <div class="status-right">
+      <label class="status-toggle">GLOW <input type="checkbox" id="status-glow" checked class="toggle-switch"></label>
+      <label class="status-toggle">3D ROTATION <input type="checkbox" id="status-rotate" checked class="toggle-switch"></label>
+      <label class="status-toggle">ZOOM
+        <input type="range" id="status-zoom" min="10" max="650" step="5" value="208">
+        <span class="status-zoom-pct" id="status-zoom-pct">75%</span>
+      </label>
+    </div>
+  </div>
+
+  <div id="list-view" class="hidden"></div>
+
+</div>
+
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
